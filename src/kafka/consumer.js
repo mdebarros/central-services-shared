@@ -40,6 +40,7 @@ const Promise = require('bluebird')
 const EventEmitter = require('events')
 const async = require('async')
 const Logger = require('../logger')
+const Perf4js = require('../perf4js')
 const Kafka = require('node-rdkafka')
 
 const Protocol = require('./protocol')
@@ -246,6 +247,7 @@ class Consumer extends EventEmitter {
    * @return {Promise} - Returns a promise: resolved if successful, or rejection if connection failed
    */
   connect () {
+    const metricConsumerConnectStartNow = (new Date()).getTime()
     let { logger } = this._config
     logger.silly('Consumer::connect() - start')
     return new Promise((resolve, reject) => {
@@ -277,6 +279,9 @@ class Consumer extends EventEmitter {
         super.emit('ready', arg)
         this.subscribe()
         logger.silly('Consumer::connect() - end')
+        const metricConsumerConnectEndNow = (new Date()).getTime()
+        var metricConsumerConnectProcessingTime = metricConsumerConnectEndNow - metricConsumerConnectStartNow
+        Perf4js.info(metricConsumerConnectStartNow, metricConsumerConnectProcessingTime, 'metricConsumerConnectProcessingTime')
         resolve(true)
       })
 
@@ -285,6 +290,9 @@ class Consumer extends EventEmitter {
         if (error) {
           super.emit('error', error)
           logger.silly('Consumer::connect() - end')
+          const metricConsumerConnectEndNow = (new Date()).getTime()
+          var metricConnectConsumerProcessingTime = metricConsumerConnectEndNow - metricConsumerConnectStartNow
+          Perf4js.info(metricConsumerConnectStartNow, metricConnectConsumerProcessingTime, 'metricConnectConsumerProcessingTime')
           return reject(error)
         }
         // this.subscribe()
@@ -366,6 +374,7 @@ class Consumer extends EventEmitter {
    * @param {Consumer~workDoneCb} workDoneCb - Callback function to process the consumed message
    */
   consume (workDoneCb) {
+    const metricConsumeStartNow = (new Date()).getTime()
     let { logger } = this._config
     logger.silly('Consumer::consume() - start')
 
@@ -429,6 +438,9 @@ class Consumer extends EventEmitter {
         this._consumeFlow(workDoneCb)
     }
     logger.silly('Consumer::consume() - end')
+    const metricConsumeEndNow = (new Date()).getTime()
+    var metricConsumeProcessingTime = metricConsumeEndNow - metricConsumeStartNow
+    Perf4js.info(metricConsumeStartNow, metricConsumeProcessingTime, 'metricConsumeProcessingTime')
   }
 
   /**
@@ -447,10 +459,13 @@ class Consumer extends EventEmitter {
    * @param {Consumer~workDoneCb} workDoneCb - Callback function to process the consumed message
    */
   _consumePoller (pollFrequency = 10, batchSize, workDoneCb) {
+
     let { logger } = this._config
     this._pollInterval = setInterval(() => {
+      const metricConsumePollerStartNow = (new Date()).getTime()
       // if (this._status.running) {
       this._consumer.consume(batchSize, (error, messages) => {
+        const metricConsumePollerConsumeStartNow = (new Date()).getTime()
         if (error || !messages.length) {
           if (error) {
             logger.error(`Consumer::_consumerPoller() - ERROR - ${error}`)
@@ -477,8 +492,14 @@ class Consumer extends EventEmitter {
             super.emit('batch', messages)
           }
         }
+        const metricConsumePollerConsumeEndNow = (new Date()).getTime()
+        var metricConsumePollerConsumeProcessingTime = metricConsumePollerConsumeEndNow - metricConsumePollerConsumeStartNow
+        Perf4js.info(metricConsumePollerConsumeStartNow, metricConsumePollerConsumeProcessingTime, 'metricConsumePollerConsumeProcessingTime')
       })
       // }
+      const metricConsumePollerEndNow = (new Date()).getTime()
+      var metricConsumePollerProcessingTime = metricConsumePollerEndNow - metricConsumePollerStartNow
+      Perf4js.info(metricConsumePollerStartNow, metricConsumePollerProcessingTime, 'metricConsumePollerProcessingTime')
     }, pollFrequency)
   }
 
@@ -505,8 +526,10 @@ class Consumer extends EventEmitter {
    * @returns {boolean} - true when successful
    */
   _consumeRecursive (recursiveTimeout = 100, batchSize, workDoneCb) {
+    const metricConsumeRecursiveStartNow = (new Date()).getTime()
     let { logger } = this._config
     this._consumer.consume(batchSize, (error, messages) => {
+      const metricConsumeRecursiveConsumeStartNow = (new Date()).getTime()
       if (error || !messages.length) {
         if (this._status.running) {
           return setTimeout(() => {
@@ -536,9 +559,15 @@ class Consumer extends EventEmitter {
           super.emit('recursive', error, messages)
           super.emit('batch', messages)
         }
+        const metricConsumeRecursiveConsumeEndNow = (new Date()).getTime()
+        var metricConsumeRecursiveConsumeProcessingTime = metricConsumeRecursiveConsumeEndNow - metricConsumeRecursiveConsumeStartNow
+        Perf4js.info(metricConsumeRecursiveStartNow, metricConsumeRecursiveConsumeProcessingTime, 'metricConsumeRecursiveConsumeProcessingTime')
         return true
       }
     })
+    const metricConsumeRecursiveEndNow = (new Date()).getTime()
+    var metricConsumeRecursiveProcessingTime = metricConsumeRecursiveEndNow - metricConsumeRecursiveStartNow
+    Perf4js.info(metricConsumeRecursiveStartNow, metricConsumeRecursiveProcessingTime, 'metricConsumeRecursiveProcessingTime')
   }
 
   /**
@@ -554,8 +583,10 @@ class Consumer extends EventEmitter {
    * @param {Consumer~workDoneCb} workDoneCb - Callback function to process the consumed message
    */
   _consumeFlow (workDoneCb) {
+    const metricConsumeFlowStartNow = (new Date()).getTime()
     let { logger } = this._config
     this._consumer.consume((error, message) => {
+      const metricConsumeFlowConsumeStartNow = (new Date()).getTime()
       if (error || !message) {
 
       } else {
@@ -575,7 +606,13 @@ class Consumer extends EventEmitter {
         }
         // super.emit('batch', message) // not applicable in flow mode since its one message at a time
       }
+      const metricConsumeFlowConsumeEndNow = (new Date()).getTime()
+      var metricConsumeFlowConsumeProcessingTime = metricConsumeFlowConsumeEndNow - metricConsumeFlowConsumeStartNow
+      Perf4js.info(metricConsumeFlowConsumeStartNow, metricConsumeFlowConsumeProcessingTime, 'metricConsumeFlowConsumeProcessingTime')
     })
+    const metricConsumeFlowEndNow = (new Date()).getTime()
+    var metricConsumeFlowProcessingTime = metricConsumeFlowEndNow - metricConsumeFlowStartNow
+    Perf4js.info(metricConsumeFlowStartNow, metricConsumeFlowProcessingTime, 'metricConsumeFlowProcessingTime')
   }
 
   // _setDefaultConsumeTimeout (consumeTimeout = 1000) {
@@ -611,10 +648,14 @@ class Consumer extends EventEmitter {
    * @param {object} topicPartitions - List of topics that must be commited. If null, it will default to the topics list provided in the constructor. Defaults = null
    */
   commit (topicPartitions = null) {
+    const metricCommitStartNow = (new Date()).getTime()
     let { logger } = this._config
     logger.silly('Consumer::commit() - start')
     this._consumer.commit(topicPartitions)
     logger.silly('Consumer::commit() - end')
+    const metricCommitEndNow = (new Date()).getTime()
+    var metricCommitProcessingTime = metricCommitEndNow - metricCommitStartNow
+    Perf4js.info(metricCommitStartNow, metricCommitProcessingTime, 'metricCommitProcessingTime')
   }
 
   /**
@@ -623,10 +664,14 @@ class Consumer extends EventEmitter {
    * @param {KafkaConsumer~Message} msg - Kafka message to be commited
    */
   commitMessage (msg) {
+    const metricCommitMessageStartNow = (new Date()).getTime()
     let { logger } = this._config
     logger.silly('Consumer::commitMessage() - start')
     this._consumer.commitMessage(msg)
     logger.silly('Consumer::commitMessage() - end')
+    const metricCommitMessageEndNow = (new Date()).getTime()
+    var metricCommitMessageProcessingTime = metricCommitMessageEndNow - metricCommitMessageStartNow
+    Perf4js.info(metricCommitMessageStartNow, metricCommitMessageProcessingTime, 'metricCommitMessageProcessingTime')
   }
 
   /**
@@ -635,10 +680,14 @@ class Consumer extends EventEmitter {
    * @param {object} topicPartitions - List of topics that must be commited. If null, it will default to the topics list provided in the constructor. Defaults = null
    */
   commitSync (topicPartitions = null) {
+    const metricCommitSyncStartNow = (new Date()).getTime()
     let { logger } = this._config
     logger.silly('Consumer::commitSync() - start')
     this._consumer.commitSync(topicPartitions)
     logger.silly('Consumer::commitSync() - end')
+    const metricCommitSyncEndNow = (new Date()).getTime()
+    var metricCommitSyncProcessingTime = metricCommitSyncEndNow - metricCommitSyncStartNow
+    Perf4js.info(metricCommitSyncStartNow, metricCommitSyncProcessingTime, 'metricCommitSyncProcessingTime')
   }
 
   /**
@@ -647,10 +696,14 @@ class Consumer extends EventEmitter {
    * @param {KafkaConsumer~Message} msg - Kafka message to be commited
    */
   commitMessageSync (msg) {
+    const metricCommitMessageSyncStartNow = (new Date()).getTime()
     let { logger } = this._config
     logger.silly('Consumer::commitMessageSync() - start')
     this._consumer.commitMessageSync(msg)
     logger.silly('Consumer::commitMessageSync() - end')
+    const metricCommitMessageSyncEndNow = (new Date()).getTime()
+    var metricCommitMessageSyncProcessingTime = metricCommitMessageSyncEndNow - metricCommitMessageSyncStartNow
+    Perf4js.info(metricCommitMessageSyncStartNow, metricCommitMessageSyncProcessingTime, 'metricCommitMessageSyncProcessingTime')
   }
 
   /**

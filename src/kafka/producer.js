@@ -38,6 +38,7 @@
 
 const EventEmitter = require('events')
 const Logger = require('../logger')
+const Perf4js = require('../perf4js')
 const Kafka = require('node-rdkafka')
 const Protocol = require('./protocol')
 
@@ -197,6 +198,7 @@ class Producer extends EventEmitter {
    * @returns {Promise} - Returns a promise: resolved if successful, or rejection if connection failed
    */
   async connect () {
+    const metricProducerConnectStartNow = (new Date()).getTime()
     let {logger} = this._config
     logger.silly('Producer::connect() - start')
     return new Promise((resolve, reject) => {
@@ -226,6 +228,9 @@ class Producer extends EventEmitter {
         logger.silly(`Native producer ready v. ${Kafka.librdkafkaVersion}, e. ${Kafka.features.join(', ')}.`)
         this._producer.poll()
         super.emit('ready')
+        const metricProducerConnectEndNow = (new Date()).getTime()
+        var metricProducerConnectProcessingTime = metricProducerConnectEndNow - metricProducerConnectStartNow
+        Perf4js.info(metricProducerConnectStartNow, metricProducerConnectProcessingTime, 'metricProducerConnectProcessingTime')
         resolve(true)
       })
 
@@ -274,6 +279,7 @@ class Producer extends EventEmitter {
    * @returns {boolean} or if failed {Error}
    */
   async sendMessage (messageProtocol, topicConf) {
+    const metricProducerSendMessageStartNow = (new Date()).getTime()
     try {
       if (!this._producer) {
         throw new Error('You must call and await .connect() before trying to produce messages.')
@@ -293,6 +299,9 @@ class Producer extends EventEmitter {
       }))
       const producedAt = Date.now()
       await this._producer.produce(topicConf.topicName, topicConf.partition, parsedMessageBuffer, topicConf.key, producedAt, topicConf.opaqueKey)
+      const metricProducerSendMessageEndNow = (new Date()).getTime()
+      var metricProducerSendMessageProcessingTime = metricProducerSendMessageEndNow - metricProducerSendMessageStartNow
+      Perf4js.info(metricProducerSendMessageStartNow, metricProducerSendMessageProcessingTime, 'metricProducerSendMessageProcessingTime')
       return true
     } catch (e) {
       this._config.logger.debug(e)
