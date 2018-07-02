@@ -275,7 +275,7 @@ class Consumer extends EventEmitter {
       })
 
       this._consumer.on('ready', arg => {
-        logger.debug(`node-rdkafka v${Kafka.librdkafkaVersion} ready - ${JSON.stringify(arg)}`)
+        logger.info(`node-rdkafka v${Kafka.librdkafkaVersion} ready - ${JSON.stringify(arg)}`)
         super.emit('ready', arg)
         this.subscribe()
         logger.silly('Consumer::connect() - end')
@@ -385,6 +385,7 @@ class Consumer extends EventEmitter {
     // setup queues to ensure sync processing of messages if options.sync is true
     if (this._config.options.sync) {
       this._syncQueue = async.queue((message, callbackDone) => {
+        const metricConsumeSyncQueueStartNow = (new Date()).getTime()
         logger.debug(`Consumer::consume() - Sync Process - ${JSON.stringify(message)}`)
         let payload
         if (this._config.options.mode === ENUMS.CONSUMER_MODES.flow) {
@@ -393,11 +394,18 @@ class Consumer extends EventEmitter {
           payload = message.messages
         }
         Promise.resolve(workDoneCb(message.error, payload)).then((response) => {
+          const metricConsumeSyncQueueResolveStartNow = (new Date()).getTime()
           callbackDone() // this marks the completion of the processing by the worker
           if (this._config.options.mode === CONSUMER_MODES.recursive) { // lets call the recursive event if we are running in recursive mode
             super.emit('recursive', message.error, payload)
           }
+          const metricConsumeSyncQueueResolveEndNow = (new Date()).getTime()
+          var metricConsumeSyncQueueResolveProcessingTime = metricConsumeSyncQueueResolveEndNow - metricConsumeSyncQueueResolveStartNow
+          Perf4js.info(metricConsumeSyncQueueResolveStartNow, metricConsumeSyncQueueResolveProcessingTime, 'metricConsumeSyncQueueResolveProcessingTime')
         })
+        const metricConsumeSyncQueueEndNow = (new Date()).getTime()
+        var metricConsumeSyncQueueProcessingTime = metricConsumeSyncQueueEndNow - metricConsumeSyncQueueStartNow
+        Perf4js.info(metricConsumeSyncQueueStartNow, metricConsumeSyncQueueProcessingTime, 'metricConsumeSyncQueueProcessingTime')
       }, 1)
 
       // a callback function, invoked when queue is empty.
