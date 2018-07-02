@@ -36,10 +36,16 @@ jspm_packages
 # Optional REPL history
 .node_repl_history
 
+
+# 0x Profiler
+/*0x/
+
+# random files
+*.txt
+
 # --------------- #
 # IntelliJ #
 # --------------- #
 .idea/
 
 #package-lock.json
-package-lock.json
