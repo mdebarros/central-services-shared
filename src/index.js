@@ -7,3 +7,4 @@ exports.ErrorCategory = require('./errors/category')
 exports.NotFoundError = require('./errors/not-found')
 exports.ValidationError = require('./errors/validation')
 exports.Kafka = require('./kafka')
+

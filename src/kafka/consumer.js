@@ -401,6 +401,7 @@ class Consumer extends EventEmitter {
           }
           const metricConsumeSyncQueueResolveEndNow = (new Date()).getTime()
           var metricConsumeSyncQueueResolveProcessingTime = metricConsumeSyncQueueResolveEndNow - metricConsumeSyncQueueResolveStartNow
+          // Perf4js.info(payload., metricConsumeSyncQueueResolveProcessingTime, 'metricConsumeSyncQueueResolveProcessingTime')
           Perf4js.info(metricConsumeSyncQueueResolveStartNow, metricConsumeSyncQueueResolveProcessingTime, 'metricConsumeSyncQueueResolveProcessingTime')
         })
         const metricConsumeSyncQueueEndNow = (new Date()).getTime()
