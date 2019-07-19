@@ -25,16 +25,16 @@
 
 const Accounts = require('./accounts')
 const EndPoints = require('./endpoints')
-const Events = require('./events')
 const Http = require('./http')
-const Kafka = require('./Kafka')
 const Transfers = require('./transfers')
+const Events = require('./events')
+const Kafka = require('./kafka')
 
 module.exports = {
   Accounts,
   EndPoints,
   Events,
   Http,
-  Kafka,
-  Transfers
+  Transfers,
+  Kafka
 }

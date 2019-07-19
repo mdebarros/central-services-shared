@@ -18,34 +18,143 @@
  * Gates Foundation
  - Name Surname <name.surname@gatesfoundation.com>
 
- * Georgi Georgiev <georgi.georgiev@modusbox.com> : sourced from ml-api-adapter
+ * Georgi Georgiev <georgi.georgiev@modusbox.com>
  * Shashikant Hirugade <shashikant.hirugade@modusbox.com>
+ * Rajiv Mothilal <rajiv.mothilal@modusbox.com>
  * Miguel de Barros <miguel.debarros@modusbox.com>
  --------------
  ******/
+const Events = require('./events')
+const transferEventType = Events.Event.Type
+const transferEventAction = Events.Event.Action
 
-
-/**
- * The Producer config required
- *
- * This ENUM is for config specific Kafka fields
- */
 const Config = {
   PRODUCER: 'PRODUCER',
-  CONSUMER: 'CONSUMER',
-  EVENT: 'event'
+  CONSUMER: 'CONSUMER'
 }
 
-const Defaults = {
-  TOPIC_TEMPLATES: {
-    GENERAL_TOPIC_TEMPLATE: {
-      TEMPLATE: 'topic-{{functionality}}-{{action}}',
-      REGEX: 'topic-(.*)-(.*)'
+const Topics = {
+  NOTIFICATION: 'notification',
+  POSITION: 'position',
+  EVENT: 'event',
+  TRANSFER: 'transfer'
+}
+
+const TopicMap = {
+  'bulk-processing': {
+    'bulk-commit': {
+      functionality: transferEventType.BULK,
+      action: transferEventAction.PROCESSING
+    },
+    'bulk-prepare': {
+      functionality: transferEventType.BULK,
+      action: transferEventAction.PROCESSING
+    }
+  },
+  notification: {
+    abort: {
+      functionality: transferEventType.NOTIFICATION,
+      action: transferEventAction.EVENT
+    },
+    'abort-duplicate': {
+      functionality: transferEventType.NOTIFICATION,
+      action: transferEventAction.EVENT
+    },
+    'bulk-commit': {
+      functionality: transferEventType.NOTIFICATION,
+      action: transferEventAction.EVENT
+    },
+    'bulk-prepare': {
+      functionality: transferEventType.NOTIFICATION,
+      action: transferEventAction.EVENT
+    },
+    'bulk-processing': {
+      functionality: transferEventType.NOTIFICATION,
+      action: transferEventAction.EVENT
+    },
+    commit: {
+      functionality: transferEventType.NOTIFICATION,
+      action: transferEventAction.EVENT
+    },
+    'fulfil-duplicate': {
+      functionality: transferEventType.NOTIFICATION,
+      action: transferEventAction.EVENT
+    },
+    get: {
+      functionality: transferEventType.NOTIFICATION,
+      action: transferEventAction.EVENT
+    },
+    'limit-adjustment': {
+      functionality: transferEventType.NOTIFICATION,
+      action: transferEventAction.EVENT
+    },
+    position: {
+      functionality: transferEventType.NOTIFICATION,
+      action: transferEventAction.EVENT
+    },
+    prepare: {
+      functionality: transferEventType.NOTIFICATION,
+      action: transferEventAction.EVENT
+    },
+    'prepare-duplicate': {
+      functionality: transferEventType.NOTIFICATION,
+      action: transferEventAction.EVENT
+    },
+    reject: {
+      functionality: transferEventType.NOTIFICATION,
+      action: transferEventAction.EVENT
+    },
+    'timeout-received': {
+      functionality: transferEventType.NOTIFICATION,
+      action: transferEventAction.EVENT
+    }
+  },
+  position: {
+    'bulk-commit': {
+      functionality: transferEventType.TRANSFER,
+      action: transferEventAction.POSITION
+    },
+    'bulk-prepare': {
+      functionality: transferEventType.TRANSFER,
+      action: transferEventAction.POSITION
+    },
+    prepare: {
+      functionality: transferEventType.TRANSFER,
+      action: transferEventAction.POSITION
+    },
+    commit: {
+      functionality: transferEventType.TRANSFER,
+      action: transferEventAction.POSITION
+    },
+    'timeout-reserved': {
+      functionality: transferEventType.TRANSFER,
+      action: transferEventAction.POSITION
+    },
+    reject: {
+      functionality: transferEventType.TRANSFER,
+      action: transferEventAction.POSITION
+    },
+    abort: {
+      functionality: transferEventType.TRANSFER,
+      action: transferEventAction.POSITION
+    }
+  },
+  prepare: {
+    'bulk-prepare': {
+      functionality: transferEventType.TRANSFER,
+      action: transferEventAction.PREPARE
+    }
+  },
+  fulfil: {
+    'bulk-commit': {
+      functionality: transferEventType.TRANSFER,
+      action: transferEventAction.FULFIL
     }
   }
 }
 
 module.exports = {
   Config,
-  Defaults
+  Topics,
+  TopicMap
 }
